@@ -8,12 +8,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: SubwayController
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: |
+          ZIP="$(ls *.zip | head -n1)"
+          echo "Using $ZIP"
+          mkdir -p "$RUNNER_TEMP/proj"
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP/proj"
+          F="$(find "$RUNNER_TEMP/proj" -name settings.gradle.kts | head -n1)"
+          echo "PROJ=$(dirname "$F")" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v4
         with:
@@ -28,12 +33,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
-          build-root-directory: SubwayController
 
       - name: Unit tests + assembleDebug
-        run: gradle testDebugUnitTest assembleDebug --no-daemon --stacktrace
+        run: |
+          cd "$PROJ"
+          gradle testDebugUnitTest assembleDebug --no-daemon --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: subway-controller-debug-apk
-          path: SubwayController/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJ }}/app/build/outputs/apk/debug/app-debug.apk
