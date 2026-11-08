@@ -1,7 +1,9 @@
-name: Build APK
+name: Build Debug APK
 
 on:
   push:
+    branches: [ main, master ]
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -9,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Giải nén dự án
-        run: unzip -o SubwayController.zip
 
       - uses: actions/setup-java@v4
         with:
@@ -24,11 +23,13 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: Đóng gói APK
-        working-directory: SubwayController
-        run: gradle assembleDebug --no-daemon --stacktrace
+      - name: Unit tests + assembleDebug
+        run: gradle testDebugUnitTest assembleDebug --no-daemon --stacktrace
+
+      - name: Show APK
+        run: ls -l app/build/outputs/apk/debug/app-debug.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SubwayController-APK
-          path: SubwayController/app/build/outputs/apk/debug/app-debug.apk
+          name: subway-controller-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
